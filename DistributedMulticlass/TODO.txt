@@ -1,1 +1,4 @@
 Create the output directory and then output to it automatically. (Based on input from mover.txt)
+Add in the actual SVM formulation part into LearnInitializer.java.
+Add in other data sets.
+Fix MATLAB script for reading in output data.
