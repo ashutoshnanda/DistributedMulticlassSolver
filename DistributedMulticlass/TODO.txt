@@ -1,0 +1,1 @@
+Create the output directory and then output to it automatically. (Based on input from mover.txt)

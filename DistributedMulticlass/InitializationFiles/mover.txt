@@ -1,0 +1,29 @@
+# Mover
+
+NUMNODES 5
+
+random.seed 1234567890
+simulation.cycles 50
+
+network.size NUMNODES
+ 
+protocol.link IdleProtocol
+
+init.connect WireKOut
+init.connect.protocol link
+init.connect.k NUMNODES/2
+
+protocol.move mover.Move
+protocol.move.linkable link
+
+init.learn mover.LearnInitializer
+init.learn.type kth
+init.learn.file DataFiles/iris.data
+init.learn.protocol move
+
+control.dumper mover.MoveDumper
+control.dumper.FINAL
+control.dumper.file output.txt
+
+control.mover_observer mover.MoverObserver
+control.mover_observer.protocol move
