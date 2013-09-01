@@ -26,7 +26,17 @@ public class Move extends MatrixHolder implements CDProtocol {
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
         if (linkable.degree() > 0) {
             Node peer = linkable.getNeighbor(CommonState.r.nextInt(linkable.degree()));
-
+            double bestvalue = 0;
+            int bestNode = 0;
+            for(int i = 0; i < linkable.degree(); i++) {
+            	Node other = linkable.getNeighbor(i);
+            	MatrixHolder m = (MatrixHolder) other.getProtocol(protocolID);
+            	if(LearnInitializer.acc(m.value, m.train) > bestvalue) {
+            		bestvalue = LearnInitializer.acc(m.value, m.train);
+            		bestNode = i;
+            	}
+            }
+            //peer = linkable.getNeighbor(bestNode);
             // Failure handling
             if (!peer.isUp())
                 return;

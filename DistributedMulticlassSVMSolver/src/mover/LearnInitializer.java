@@ -3,6 +3,7 @@ package mover;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.Scanner;
 
 import peersim.config.*;
@@ -25,6 +26,10 @@ public class LearnInitializer implements Control {
     private static final String PAR_PROT = "protocol";
     
     private static final String PAR_FILE = "file";
+    
+    private static final String PAR_T = "T";
+    
+    private static final String PAR_K = "k";
 
     // ------------------------------------------------------------------------
     // Fields
@@ -38,11 +43,15 @@ public class LearnInitializer implements Control {
     
     public static int n;
 
-	public static double lambda = Math.pow(10, -4);
+	public static double lambda = Math.pow(10, -2);
 	
 	public static Matrix optimal;
 	
 	public static String file;
+	
+	public static int T;
+	
+	public static int k;
 
     // ------------------------------------------------------------------------
     // Constructor
@@ -55,6 +64,8 @@ public class LearnInitializer implements Control {
         type = Configuration.getString(prefix + "." + PAR_TYPE);
         pid = Configuration.getPid(prefix + "." + PAR_PROT);
         file = Configuration.getString(prefix + "." + PAR_FILE);
+        T = Configuration.getInt(prefix + "." + PAR_T);
+        k = Configuration.getInt(prefix + "." + PAR_K);
     }
 
     // ------------------------------------------------------------------------
@@ -64,7 +75,7 @@ public class LearnInitializer implements Control {
     public boolean execute() {
     	ArrayList<ArrayList> trainset = getSet();
     	this.optimal = getClassifier(trainset);
-    	System.out.printf("Optimal Accuracy: %f\n", getAccuracy(this.optimal));
+    	System.out.printf("Optimal Accuracy: %f\n", acc(this.optimal, trainset));
         for (int i = 0; i < Network.size(); i++) {
             Move nodeValue = (Move) Network.get(i).getProtocol(pid);
             nodeValue.resetExamples();
@@ -76,6 +87,7 @@ public class LearnInitializer implements Control {
             	for(ArrayList example : trainset) {
             		nodeValue.counts[(int) example.get(1)]++;
             	}
+            	nodeValue.setTrain(trainset);
             } else if(type.equals("kth")) {
             	ArrayList<ArrayList> smallset = new ArrayList<ArrayList>();
             	for(int j = 0; j < trainset.size(); j++) {
@@ -86,6 +98,7 @@ public class LearnInitializer implements Control {
             		}
             	}
             	val = getClassifier(smallset);
+            	nodeValue.setTrain(smallset);
             	nodeValue.setNumTrained(smallset.size());
             } else {
             	System.err.printf("LearnInitializer: UNABLE TO PARSE LEARN TYPE \"%s\"!\n", type);
@@ -206,26 +219,47 @@ public class LearnInitializer implements Control {
 	}
     
     public static Matrix trainClassifier(Matrix classifier, ArrayList trainingset) {
-    	int[] counts = new int[numClasses];
-		classifier = new Matrix(numClasses, n);
-		for(int i = 0; i < trainingset.size(); i++) {
-			int y = (int) ((ArrayList) trainingset.get(i)).get(1);
-			Matrix row = classifier.getMatrix(new int[] {y}, 0, n - 1);
-			Matrix example = (Matrix) ((ArrayList) trainingset.get(i)).get(0);
-			example = example.transpose();
-			row.plusEquals(example);
-			classifier.setMatrix(new int[] {y}, 0, n - 1, row);
-			counts[y]++;
+    	for(int t = 1; t <= T; t++) {
+			Matrix newclassifier = Matrix.constructWithCopy(classifier.getArray());
+			double curlyn = 1 / (lambda * t);
+			Matrix del = classifier.times(lambda);
+			Matrix avg = new Matrix(del.getRowDimension(), del.getColumnDimension());
+			ArrayList examples = (ArrayList) getRandomSetExamples();
+			for(Object o : examples) {
+				ArrayList example = (ArrayList) o;
+				int correct = (int) example.get(1);
+				int r = 0;
+				double maxr = 0;
+				Matrix dot = classifier.times((Matrix) example.get(0));
+				for(int i = 0; i < numClasses; i++) {
+					if(correct != i) {
+						double currentr = dot.get(i, 0);
+						if(currentr > maxr) {
+							r = i;
+							maxr = currentr;
+						}
+					}
+				}
+				double hingeloss = Math.max(0, 1 + maxr - dot.get(correct, 0));
+				//dot.print(5, 4);
+				//System.out.println("Should be " + correct);
+				if(hingeloss > 0) {
+					//System.out.println("We have loss");
+					Matrix xt = ((Matrix) example.get(0)).transpose();
+					Matrix yt = avg.getMatrix(new int[] {correct}, 0, n - 1).minus(xt);
+					avg.setMatrix(new int[] {correct}, 0, n - 1, yt);
+					Matrix rt = avg.getMatrix(new int[] {r}, 0, n - 1).plus(xt);
+					avg.setMatrix(new int[] {r}, 0, n - 1, rt);
+				}
+			}
+			for(int i = 0; i < avg.getRowDimension(); i++) {
+				avg.setMatrix(new int[] {i}, 0, n-1, avg.getMatrix(new int[] {i}, 0, n-1).times(1));
+			}
+			del.plusEquals(avg);
+			classifier.minusEquals(del.times(curlyn));
+			classifier.timesEquals(1 / (Math.pow(lambda, 0.5) * classifier.normF()));
 		}
-		//System.out.println(Arrays.toString(counts));
-		//printClassifier();
-		for(int i = 0; i < numClasses; i++) {
-			Matrix row = classifier.getMatrix(new int[] {i}, 0, n - 1);
-			row.timesEquals(1.0 / counts[i]);
-			//row.timesEquals(1.0 / row.normF());
-			classifier.setMatrix(new int[] {i}, 0, n - 1, row);
-		}
-		return classifier;
+    	return classifier;
     }
     
     public static int getNumberOfFeatures(ArrayList set) {
@@ -233,35 +267,45 @@ public class LearnInitializer implements Control {
 		return ((Matrix) (firstexample.get(0))).getRowDimension();
 	}
     
-    public static double getAccuracy(Matrix classifier) {
-		int numPredicted = 0;
-		ArrayList<ArrayList> trainingset = getSet();
-		for (int i = 0; i < trainingset.size(); i++) {
-			ArrayList example = (ArrayList) trainingset.get(i);
-			Matrix test = new Matrix(classifier.getRowDimension(), classifier.getColumnDimension());
-    		for(int j = 0; j < classifier.getRowDimension(); j++) {
-        		Matrix current = classifier.getMatrix(new int[] {j}, 0, LearnInitializer.n - 1);
-        		current.timesEquals(1 / current.normF());
-        		test.setMatrix(new int[] {j}, 0, LearnInitializer.n - 1, current);
-    		}
-			Matrix dot = test.times((Matrix) example.get(0));
-			// dot.print(2, 2);
-			// ((Matrix) example.get(0)).transpose().print(2, 4);
-			// System.out.println("Should be " + example.get(1));
-			int correct = (int) example.get(1);
-			double max = 0;
-			int predicted = -1;
-			for (int j = 0; j < numClasses; j++) {
-				if (dot.get(j, 0) > max) {
-					max = dot.get(j, 0);
-					predicted = j;
+    public static double acc(Matrix classifier, ArrayList trainingset) {
+		int correct = 0;
+		for(int i = 0; i < trainingset.size(); i++) {
+			Matrix example = (Matrix) ((ArrayList) trainingset.get(i)).get(0);
+			Matrix dot = classifier.times(example);
+			int predict = -1;
+			double predictvalue = 0;
+			for(int z = 0; z < numClasses; z++) {
+				if(predictvalue < dot.get(z, 0)) {
+					predict = z;
+					predictvalue = dot.get(z, 0);
 				}
 			}
-			if (correct == predicted) {
-				numPredicted++;
+			if((int) ((ArrayList) trainingset.get(i)).get(1) == predict) {
+				correct++;
 			}
 		}
-		return ((double) numPredicted) / trainingset.size();
+		return (double) correct / trainingset.size();
+	}
+    
+    public static ArrayList getRandomSetExamples() {
+    	ArrayList trainingset = getSet();
+		ArrayList randomSet = new ArrayList();
+		Random generator = new Random();
+		ArrayList<Integer> randomindices = new ArrayList<Integer>();
+		for (int i = 0; i < k; i++) {
+			boolean shouldAdd = false;
+			int currentRandom = -1;
+			while (!shouldAdd) {
+				currentRandom = generator.nextInt(trainingset.size());
+				shouldAdd = randomindices.indexOf(currentRandom) == -1;
+			}
+			randomindices.add(currentRandom);
+		}
+		for (int randomindex : randomindices) {
+			randomSet.add(trainingset.get(randomindex));
+		}
+		// System.out.println(randomindices);
+		return randomSet;
 	}
     
 }

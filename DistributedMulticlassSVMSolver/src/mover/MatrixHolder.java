@@ -26,6 +26,8 @@ protected int numTrained;
 
 protected ArrayList<ArrayList> examples;
 
+protected ArrayList<ArrayList> train;
+
 protected int[] counts;
 	
 
@@ -106,6 +108,10 @@ public void resetExamples() {
 
 public int numExamplesForClass(int classValue) {
 	return counts[classValue];
+}
+
+public void setTrain(ArrayList<ArrayList> examples) {
+	this.train = examples;
 }
 
 }

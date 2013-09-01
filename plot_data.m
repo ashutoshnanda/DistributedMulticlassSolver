@@ -51,7 +51,7 @@ for i = 1:size(data)(2)
 	title(sprintf('Norm Diff (Percent) Plot For Node %d', i))
 	ylabel(sprintf("Frobenius Norm for Difference Matrix Percent at Node %d", i))
 	xlabel("Number of Cycles in PeerSim")
-	axis([0 size(data)(1) 0 5])
+	axis([0 size(data)(1) 0 1])
 	h = gcf;
 	filename = sprintf("C:\\Users\\Ashutosh\\Dropbox\\School\\Eleventh Grade\\Columbia Internship\\Data Analysis\\NormDiffPercent Plot for Node %d.jpg", i);
 	saveas(h, sprintf("NormDiffPercentPlotForNode%d.jpg", i))
