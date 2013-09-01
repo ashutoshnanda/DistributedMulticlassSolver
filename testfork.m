@@ -3,7 +3,7 @@ function [data] = testfork(file_name)
 key = '';
 %data = zeros(numpoints, numnodes);
 if size(file_name) == 0
-	file_name = 'C:\Users\Ashutosh\workspace\Multiclass SVM Primal Solver\out.txt';
+	file_name = 'C:\Users\Ashutosh\Documents\GitHub\DistributedMulticlassSolver\Multiclass SVM Primal Solver\out.txt';
 end
 file = fopen(file_name);
 line = fgetl(file);

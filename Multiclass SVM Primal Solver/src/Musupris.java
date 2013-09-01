@@ -53,7 +53,7 @@ public class Musupris {
 		int num = 100;
 		p.println(num/2);
 		int localT = T;
-		int firstk = 1, secondk = 150;
+		int firstk = 1, secondk = 10;
 		for(int i = 0; i < num; i++) {
 			if(i <= num/2 - 1) {
 				k = 1;
