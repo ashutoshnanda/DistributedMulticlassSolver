@@ -1,10 +1,13 @@
 % This script will make a plot of accuracy and norm of difference matrices for each timepoint.
-function [data] = plot_data(file_name, typeoutput)
+function [data] = plot_data_withpush(file_name, typeoutput)
 key = '';
 %data = zeros(numpoints, numnodes);
 valid = ['NormDiff', 'NormDiffNormal', 'Accuracy'];
+posofcurrentfile = strfind(mfilename('fullpath'), filesep)(size(strfind(mfilename('fullpath'), filesep))(1, 2));
+directory = substr(mfilename('fullpath'), 1, posofcurrentfile);
+str = sprintf('%s%s', directory, strcat('DistributedMulticlassSVMSolver', filesep, 'output.txt'))
 if size(file_name) == 0
-	file_name = 'C:\Users\Ashutosh\Documents\GitHub\DistributedMulticlassSolver\DistributedMulticlassSVMSolver\output.txt';
+	file_name = str;
 end
 if isfloat(typeoutput)
 	if !(round(typeoutput) == typeoutput) || !isscalar(typeoutput)
@@ -31,30 +34,44 @@ else
 	return
 end
 disp(key)
-file = fopen(file_name);
+file = fopen(file_name);	
 line = fgetl(file);
 index = 1;
 while ischar(line)
-	concatenated = sprintf('Node: %%d; Timepoint: %%d; %s: %%f', key);
+	concatenated = sprintf('Node: %%d; Time: %%d; Accuracy: %%f; Norm Diff Matrix: %%f; Norm Diff Percent: %%f');
     A = sscanf(line, concatenated)';
-	if size(A) == [1 3]
-		data(A(2) + 1, A(1) + 1) = A(3);
+	if size(A) == [1 5]
+		if strcmp(key, 'Accuracy')
+			data(A(2) + 1, A(1) + 1) = A(3);
+		elseif strcmp(key, 'NormDiff')
+			data(A(2) + 1, A(1) + 1) = A(4);
+		else
+			data(A(2) + 1, A(1) + 1) = A(5);
+		end
+	else 
+		metadata = sscanf(line, sprintf('Cycles: %%d; Nodes: %%d'));
+		data = zeros(metadata(1, 1), metadata(2, 1));
 	end
     line = fgetl(file);
 	index = index + 1;
 end
 for i = 1:size(data)(2)
-	disp(i)
 	X = linspace(1, size(data)(1), size(data)(1));
 	Y = data(X, i);
 	figure;
-	fig = plot(X,Y);
-	title(sprintf('Norm Diff (Percent) Plot For Node %d', i))
-	ylabel(sprintf("Frobenius Norm for Difference Matrix Percent at Node %d", i))
+	fig = plot(X,Y, '*');
+	title(sprintf('%s Plot For Node %d', key, i))
+	ylabel(sprintf("Value at Node %d", i))
 	xlabel("Number of Cycles in PeerSim")
-	axis([0 size(data)(1) 0 1])
+	if strcmp(key, 'Accuracy')
+		axis([0 size(data)(1) 0 1])
+	elseif strcmp(key, 'NormDiff')
+		axis([0 size(data)(1) 0 max(data) * 11/10])
+	else
+		axis([0 size(data)(1) 0 max(data) * 11/10])
+	end
 	h = gcf;
 	filename = sprintf("C:\\Users\\Ashutosh\\Dropbox\\School\\Eleventh Grade\\Columbia Internship\\Data Analysis\\NormDiffPercent Plot for Node %d.jpg", i);
-	saveas(h, sprintf("NormDiffPercentPlotForNode%d.jpg", i))
+	saveas(h, sprintf("%sDotPlotForNode%d.jpg", key, i))
 	%saveas(h, filename)
 end

@@ -8,21 +8,11 @@ import java.util.Scanner;
 
 import peersim.config.*;
 import peersim.core.*;
+import peersim.graph.SubGraphEdges;
 import Jama.Matrix;
 
-public class LearnInitializer implements Control {
-
-    // ------------------------------------------------------------------------
-    // Constants
-    // ------------------------------------------------------------------------
-
-    private static final String PAR_TYPE = "type";
-
-    /**
-     * The protocol to operate on.
-     * 
-     * @config
-     */
+public class Start implements Control {
+	
     private static final String PAR_PROT = "protocol";
     
     private static final String PAR_FILE = "file";
@@ -30,12 +20,6 @@ public class LearnInitializer implements Control {
     private static final String PAR_T = "T";
     
     private static final String PAR_K = "k";
-
-    // ------------------------------------------------------------------------
-    // Fields
-    // ------------------------------------------------------------------------
-    
-    private final String type;
 
     private final int pid;
     
@@ -52,28 +36,21 @@ public class LearnInitializer implements Control {
 	public static int T;
 	
 	public static int k;
+	
+	public static long start = 0;
+	
+	public static ArrayList<ArrayList> trainset = null;
 
-    // ------------------------------------------------------------------------
-    // Constructor
-    // ------------------------------------------------------------------------
-
-    /**
-     * Creates a new instance and read parameters from the config file.
-     */
-    public LearnInitializer(String prefix) {
-        type = Configuration.getString(prefix + "." + PAR_TYPE);
+    public Start(String prefix) {
         pid = Configuration.getPid(prefix + "." + PAR_PROT);
         file = Configuration.getString(prefix + "." + PAR_FILE);
         T = Configuration.getInt(prefix + "." + PAR_T);
         k = Configuration.getInt(prefix + "." + PAR_K);
     }
-
-    // ------------------------------------------------------------------------
-    // Methods
-    // ------------------------------------------------------------------------
-
+    
     public boolean execute() {
-    	ArrayList<ArrayList> trainset = getSet();
+    	start = System.nanoTime();
+    	trainset = getSet();
     	this.optimal = getClassifier(trainset);
     	System.out.printf("Optimal Accuracy: %f\n", acc(this.optimal, trainset));
         for (int i = 0; i < Network.size(); i++) {
@@ -81,22 +58,24 @@ public class LearnInitializer implements Control {
             nodeValue.classifiers = new ArrayList<Matrix>();
             nodeValue.subgradients = new ArrayList<Matrix>();
             Matrix val = null;
-            if(type.equals("uniform")) {
-            	val = getClassifier(trainset);
-            } else if(type.equals("kth")) {
-            	ArrayList<ArrayList> smallset = new ArrayList<ArrayList>();
-            	for(int j = 0; j < trainset.size(); j++) {
-            		if(j % Network.size() == i) {
-            			//System.out.printf("Example %d for Node %d\n", j, i);
-            			smallset.add(trainset.get(j));
-            		}
+        	ArrayList<ArrayList> smallset = new ArrayList<ArrayList>();
+        	for(int j = 0; j < trainset.size(); j++) {
+        		if(j % Network.size() == i) {
+        			smallset.add(trainset.get(j));
+        		}
+        	}
+        	nodeValue.examples = smallset;
+            val = new Matrix(numClasses, n);
+            for(int j = 0; j < numClasses; j++) {
+            	for(int k = 0; k < n; k++) {
+            		val.set(j, k, Math.random());
             	}
-            	val = getClassifier(smallset);
-            } else {
-            	System.err.printf("LearnInitializer: UNABLE TO PARSE LEARN TYPE \"%s\"!\n", type);
-            	System.exit(1);
             }
-            nodeValue.value = val;
+            val.timesEquals(Math.pow(lambda,  -0.5) / val.normF());
+            //System.out.println(val.normF() + " " + (Math.pow(lambda, -0.5)));
+        	nodeValue.value = val;
+        	nodeValue.subgradient = new Matrix(val.getRowDimension(), val.getColumnDimension());
+        	nodeValue.accuracies = new ArrayList<Double>();
         }
         return false;
     }
@@ -299,6 +278,7 @@ public class LearnInitializer implements Control {
 	}
     
     public static double acc(Matrix classifier, ArrayList trainingset) {
+    	long start = System.nanoTime();
 		int correct = 0;
 		for(int i = 0; i < trainingset.size(); i++) {
 			Matrix example = (Matrix) ((ArrayList) trainingset.get(i)).get(0);
@@ -315,6 +295,10 @@ public class LearnInitializer implements Control {
 				correct++;
 			}
 		}
+		long end = System.nanoTime();
+		double timeinsecs = (end - start) / Math.pow(10, 9);
+		MoveDumper.numcalls++;
+		MoveDumper.totalTime += timeinsecs;
 		return (double) correct / trainingset.size();
 	}
     

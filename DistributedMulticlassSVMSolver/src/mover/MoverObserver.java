@@ -7,60 +7,22 @@ import Jama.Matrix;
 import peersim.core.*;
 import peersim.config.*;
 
-/**
- * Class DummyObserver
- * Implements a {@link Control} interface necessary to run the simulation.
- * This does nothing except returning false, so that the simulation keeps running.
- * @author Deepak Nayak
- *
- */
 public class MoverObserver implements Control {
 
-//--------------------------------------------------------------------------
-// Constants
-//--------------------------------------------------------------------------
-
-/** 
- * String name of the parameter used to select the protocol to operate on
- */
 public static final String PAR_PROTID = "protocol";
 
 
-//--------------------------------------------------------------------------
-// Fields
-//--------------------------------------------------------------------------
-
-/** The name of this object in the configuration file */
 private final String name;
 
-/** Protocol identifier */
 private final int pid;
 
-// iterator counter
-private static int i = 0;
-
-
-//--------------------------------------------------------------------------
-// Constructor
-//--------------------------------------------------------------------------
-
-/**
- * Creates a new observer and initializes the configuration parameter.
- */
 public MoverObserver(String name) {
 	this.name = name;
 	pid = Configuration.getPid(name + "." + PAR_PROTID);
 }
 
-
-//--------------------------------------------------------------------------
-// Methods
-//--------------------------------------------------------------------------
-
-// Comment inherited from interface
-// Do nothing, just for test
 public boolean execute() {
-	long time = peersim.core.CommonState.getTime();
+	/*long time = peersim.core.CommonState.getTime();
 	System.out.printf("Observing time: %d\n", time);
 	for (int i = 0; i < Network.size(); i++) {
         if(Network.get(i).isUp()) {
@@ -96,7 +58,7 @@ public boolean execute() {
         	    nodeValue.counts[max] += (int) trainExample.get(1);
         	}
         	nodeValue.resetExamples();
-        	nodeValue.getMatrix().print(5, 4);
+        	//nodeValue.getMatrix().print(5, 4);
         	System.out.printf("Norm of Diff Matrix: %f\n", nodeValue.value.minus(LearnInitializer.optimal).normF());
         	System.out.printf("Percent Norm: %f\n", nodeValue.value.minus(LearnInitializer.optimal).normF() / LearnInitializer.optimal.normF() * 100);
         	System.out.printf("Percent Accuracy: %f\n", LearnInitializer.acc(nodeValue.value, LearnInitializer.getSet()));
@@ -104,7 +66,7 @@ public boolean execute() {
         	MoveDumper.machineOut(String.format("Node: %d;Timepoint: %d;NormDiffNormal: %f", i, CommonState.getTime(), nodeValue.value.minus(LearnInitializer.optimal).normF() / LearnInitializer.optimal.normF() * 100));
         	MoveDumper.machineOut(String.format("Node: %d;Timepoint: %d;Accuracy: %f", i, CommonState.getTime(), LearnInitializer.acc(nodeValue.value, LearnInitializer.getSet())));
         }
-}
+}*/
 	return false;
 }
 

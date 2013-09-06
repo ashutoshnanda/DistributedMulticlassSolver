@@ -3,7 +3,7 @@
 NUMNODES 10
 
 random.seed 123456
-simulation.cycles 50
+simulation.cycles 5
 
 network.size NUMNODES
  
@@ -16,12 +16,21 @@ init.connect.k NUMNODES/3
 protocol.move mover.Move
 protocol.move.linkable link
 
+protocol.movenum mover.MoveNum
+protocol.movenum.linkable link
+
 init.learn mover.LearnInitializer
 init.learn.type kth
 init.learn.file DataFiles/iris.data
 init.learn.protocol move
-init.learn.T 1000
-init.learn.k 1
+init.learn.T 500
+init.learn.k 10
+
+control.mover_gradresolve mover.GradResolve
+control.mover_gradresolve.protocol move
+
+control.mover_numresolve mover.NumResolve
+control.mover_numresolve.protocol movenum
 
 control.dumper mover.MoveDumper
 control.dumper.FINAL

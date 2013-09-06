@@ -25,16 +25,17 @@ public class Move extends MatrixHolder implements CDProtocol {
         int linkableID = FastConfig.getLinkable(protocolID);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
         if (linkable.degree() > 0) {
+            System.out.println("Move says hai from node " + node.getID());
             Node peer = linkable.getNeighbor(CommonState.r.nextInt(linkable.degree()));
             double bestvalue = 0;
             int bestNode = 0;
             for(int i = 0; i < linkable.degree(); i++) {
             	Node other = linkable.getNeighbor(i);
             	MatrixHolder m = (MatrixHolder) other.getProtocol(protocolID);
-            	if(LearnInitializer.acc(m.value, m.train) > bestvalue) {
-            		bestvalue = LearnInitializer.acc(m.value, m.train);
-            		bestNode = i;
-            	}
+            	//if(LearnInitializer.acc(m.value, m.train) > bestvalue) {
+            	//	bestvalue = LearnInitializer.acc(m.value, m.train);
+            	//	bestNode = i;
+            	//}
             }
             //peer = linkable.getNeighbor(bestNode);
             // Failure handling
@@ -55,9 +56,9 @@ public class Move extends MatrixHolder implements CDProtocol {
 
             toSend.add(send);
             
-            toSend.add(self.counts[classToSend]);
+            //toSend.add(self.counts[classToSend]);
             
-            neighbor.addTrainExample(toSend);
+            //neighbor.addTrainExample(toSend);
         }
     }
 

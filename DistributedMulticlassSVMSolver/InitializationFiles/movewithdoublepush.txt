@@ -1,0 +1,43 @@
+# Mover
+
+NUMNODES 10
+NUMCYCLES 1000
+
+random.seed 123456
+simulation.cycles NUMCYCLES
+
+network.size NUMNODES
+ 
+protocol.link IdleProtocol
+
+init.connect WireKOut
+init.connect.protocol link
+init.connect.k NUMNODES/3
+
+protocol.dummy MoveDummy
+protocol.dummy.linkable link
+
+init.startup mover.Start
+init.startup.file DataFiles/iris.data
+init.startup.protocol dummy
+init.startup.T NUMCYCLES
+init.startup.k 3
+
+control.dumper mover.MoveDumper
+control.dumper.FINAL
+control.dumper.file output.txt
+
+control.gradcalc mover.GradCalc
+control.gradcalc.protocol dummy
+
+control.gradmove mover.GradMove
+control.gradmove.protocol dummy
+
+control.matcalc mover.MatCalc
+control.matcalc.protocol dummy
+
+control.matmove mover.MatMove
+control.matmove.protocol dummy
+
+control.recorder mover.Recorder
+control.recorder.protocol dummy
